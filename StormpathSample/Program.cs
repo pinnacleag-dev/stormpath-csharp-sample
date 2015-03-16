@@ -19,6 +19,57 @@ namespace StormpathSample
                     : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
             // The creation of the client assumes that the file is located in $HOME/Stormpath/apiKey.properties
             var client = createClient(homePath + "/Stormpath/apiKey.properties");
+
+            var request = new RestRequest(Method.POST);
+            var application = new Application();
+            application.href = "https://api.stormpath.com/v1/applications/53iEoLOWezpZP77Far05V";
+            application.name = "RCS";
+            Account account = new Account();
+            account.username = "demo";
+            account.password = "KingCobra71";
+
+            //Next, we'll authenticate a user account
+            var accountToAttemptLogin = account;
+            Console.WriteLine("Attempting to authenticate account with email " + accountToAttemptLogin.email + "...");
+            var loginAttempt = new BasicLoginAttempt();
+            var authStr = accountToAttemptLogin.username + ":" + accountToAttemptLogin.password;
+            //Username and password need to be base64 encoded before they are sent to Stormpath
+            loginAttempt.value = Convert.ToBase64String(Encoding.UTF8.GetBytes(authStr));
+            request = new RestRequest(Method.POST);
+            // Adding 'expand=account' to make the REST API return the whole account, instead of just the href
+            request.Resource = "/loginAttempts?expand=account";
+            request.RequestFormat = DataFormat.Json;
+            request.AddBody(loginAttempt);
+            var authResult = client.Execute<AuthenticationResult>(request, application.href);
+            var authenticatedAccount = authResult.account;
+            //Console.WriteLine("  Account with href " + authenticatedAccount.href + " has been successfully authenticated!");
+
+            var resetRequest = new RestRequest(Method.POST);
+            resetRequest.Resource = "/passwordResetTokens";
+            resetRequest.RequestFormat = DataFormat.Json;
+            var resetAccount = new Account();
+            resetAccount.email = "timctrahan@gmail.com";
+            resetRequest.AddBody(resetAccount);
+
+
+            //var resetResult = client.Execute<PasswordResetResult>(resetRequest, application.href);
+
+
+            Console.WriteLine("");
+            Console.WriteLine("Press Enter to exit...");
+            Console.ReadLine();
+            
+
+            //Main2(args);
+        }
+        static void Main2(string[] args)
+        {
+            string homePath = (Environment.OSVersion.Platform == PlatformID.Unix ||
+                   Environment.OSVersion.Platform == PlatformID.MacOSX)
+                    ? Environment.GetEnvironmentVariable("HOME")
+                    : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+            // The creation of the client assumes that the file is located in $HOME/Stormpath/apiKey.properties
+            var client = createClient(homePath + "/Stormpath/apiKey.properties");
             List<Account> accounts = parseAccountCSV("accounts_to_import.csv");
 
             //In Stormpath, an "Application" represents your real world application.  
@@ -134,7 +185,7 @@ namespace StormpathSample
 
             //if you want to clean up your work in Stormpath after the above has run, you can use this code below
 
-            /*
+            
             Console.WriteLine("Deleting directory...");
             request = new RestRequest(Method.DELETE);
             client.Execute<object>(request, group.directory.href);
@@ -144,7 +195,7 @@ namespace StormpathSample
             request = new RestRequest(Method.DELETE);
             client.Execute<object>(request, application.href);
             Console.WriteLine("  Application Deleted!");
-            */
+            
 
             Console.WriteLine("");
             Console.WriteLine("Press Enter to exit...");
